@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>PLU Übersicht</title>
+
+
+<style>
+
+/* =========================
+   GRUNDLAYOUT
+========================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+
+    margin: 0;
+
+    min-height: 100vh;
+
+    background: #f5f7fb;
+
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    color: #173b70;
+}
+
+
+/* =========================
+   HAUPTBEREICH
+========================= */
+
+.container {
+
+    width: min(900px, 94vw);
+
+    margin: 0 auto;
+
+    padding: 35px 0 50px;
+}
+
+
+/* =========================
+   TITEL
+========================= */
+
+h1 {
+
+    margin: 0 0 8px;
+
+    text-align: center;
+
+    font-size: clamp(34px, 7vw, 52px);
+
+    font-weight: 800;
+
+    color: #174ea6;
+}
+
+
+.subtitle {
+
+    text-align: center;
+
+    margin-bottom: 30px;
+
+    color: #60708a;
+
+    font-size: 17px;
+}
+
+
+/* =========================
+   SUCHFELD
+========================= */
+
+.search-box {
+
+    background: #174ea6;
+
+    padding: 20px;
+
+    border-radius: 20px;
+
+    margin-bottom: 25px;
+}
+
+
+.search {
+
+    width: 100%;
+
+    height: 62px;
+
+    border: none;
+
+    outline: none;
+
+    border-radius: 14px;
+
+    padding: 0 20px;
+
+    font-size: 20px;
+
+    color: #173b70;
+
+    background: white;
+}
+
+
+.search::placeholder {
+
+    color: #8a98ad;
+}
+
+
+/* =========================
+   ANZAHL TREFFER
+========================= */
+
+.count {
+
+    margin: 15px 3px;
+
+    color: #66758c;
+
+    font-size: 15px;
+}
+
+
+/* =========================
+   LISTE
+========================= */
+
+.list {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+
+/* =========================
+   EINZELNER EINTRAG
+========================= */
+
+.item {
+
+    background: white;
+
+    border-radius: 15px;
+
+    padding: 17px 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    box-shadow:
+        0 3px 12px rgba(20,50,90,.07);
+
+    transition:
+        transform .15s,
+        box-shadow .15s;
+}
+
+
+.item:hover {
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 5px 16px rgba(20,50,90,.12);
+}
+
+
+/* Produktname */
+
+.name {
+
+    font-size: 19px;
+
+    font-weight: 650;
+
+    color: #183b6d;
+}
+
+
+/* PLU */
+
+.plu {
+
+    flex-shrink: 0;
+
+    background: #e8f0ff;
+
+    color: #174ea6;
+
+    font-size: 19px;
+
+    font-weight: 800;
+
+    padding: 9px 15px;
+
+    border-radius: 11px;
+}
+
+
+/* =========================
+   KEINE TREFFER
+========================= */
+
+.no-results {
+
+    background: white;
+
+    border-radius: 15px;
+
+    padding: 35px 20px;
+
+    text-align: center;
+
+    color: #718096;
+
+    font-size: 18px;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 500px) {
+
+    .container {
+
+        padding-top: 25px;
+    }
+
+
+    .item {
+
+        padding: 15px;
+
+    }
+
+
+    .name {
+
+        font-size: 16px;
+    }
+
+
+    .plu {
+
+        font-size: 17px;
+
+        padding: 8px 12px;
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+    <h1>PLU Übersicht</h1>
+
+
+    <div class="subtitle">
+
+        Suche nach Produktname oder PLU
+
+    </div>
+
+
+
+    <div class="search-box">
+
+        <input
+            class="search"
+            id="search"
+            type="text"
+            placeholder="🔎  z. B. Banane oder 601..."
+            autocomplete="off"
+        >
+
+    </div>
+
+
+
+    <div
+        class="count"
+        id="count"
+    ></div>
+
+
+
+    <div
+        class="list"
+        id="list"
+    ></div>
+
+
+</div>
+
+
+
+<script>
+
+/* =========================
+   DATEN
+========================= */
+
+let data = [];
+
+
+/* =========================
+   ELEMENTE
+========================= */
+
+const search =
+    document.getElementById("search");
+
+const list =
+    document.getElementById("list");
+
+const count =
+    document.getElementById("count");
+
+
+
+/* =========================
+   DATEN AUS MULTIPLE CHOICE
+========================= */
+
+async function loadData() {
+
+    try {
+
+        const response =
+            await fetch("MultipleChoice.html");
+
+
+        const source =
+            await response.text();
+
+
+        /*
+           Sucht automatisch nach:
+
+           const raw = `...`;
+        */
+
+        const match =
+            source.match(
+                /const raw = `([\s\S]*?)`;/
+            );
+
+
+        if (!match) {
+
+            throw new Error(
+                "PLU-Daten nicht gefunden"
+            );
+
+        }
+
+
+        data = match[1]
+            .trim()
+            .split("\n")
+            .filter(Boolean)
+            .map(line =>
+                line.split("|")
+            );
+
+
+        /*
+           Alphabetisch sortieren
+        */
+
+        data.sort(
+            (a, b) =>
+                a[0].localeCompare(
+                    b[0],
+                    "de"
+                )
+        );
+
+
+        render("");
+
+
+    } catch (error) {
+
+        list.innerHTML = `
+
+            <div class="no-results">
+
+                Die PLU-Daten konnten
+                nicht geladen werden.
+
+            </div>
+
+        `;
+
+        count.textContent = "";
+
+    }
+
+}
+
+
+
+/* =========================
+   ANZEIGE
+========================= */
+
+function render(searchTerm) {
+
+
+    const term =
+        searchTerm
+            .trim()
+            .toLowerCase();
+
+
+    /*
+       Nach Produktname ODER PLU filtern
+    */
+
+    const results =
+        data.filter(item => {
+
+            const name =
+                item[0].toLowerCase();
+
+            const plu =
+                item[1].toLowerCase();
+
+
+            return (
+                name.includes(term) ||
+                plu.includes(term)
+            );
+
+        });
+
+
+
+    /* Anzahl */
+
+    count.textContent =
+        results.length +
+        (
+            results.length === 1
+                ? " Treffer"
+                : " Treffer"
+        );
+
+
+
+    /* Keine Treffer */
+
+    if (results.length === 0) {
+
+        list.innerHTML = `
+
+            <div class="no-results">
+
+                Keine Treffer gefunden.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+
+    /* Liste erstellen */
+
+    list.innerHTML =
+        results.map(item => `
+
+            <div class="item">
+
+                <div class="name">
+
+                    ${escapeHTML(item[0])}
+
+                </div>
+
+
+                <div class="plu">
+
+                    ${escapeHTML(item[1])}
+
+                </div>
+
+            </div>
+
+        `).join("");
+
+}
+
+
+
+/* =========================
+   SICHERHEIT
+========================= */
+
+function escapeHTML(text) {
+
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+
+/* =========================
+   LIVE-SUCHE
+========================= */
+
+search.addEventListener(
+    "input",
+    function() {
+
+        render(this.value);
+
+    }
+);
+
+
+
+/* =========================
+   START
+========================= */
+
+loadData();
+
+</script>
+
+
+</body>
+</html>
