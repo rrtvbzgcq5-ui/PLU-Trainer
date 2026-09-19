@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PLU-Lerner</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#fff;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+
+.trainer{
+  width:min(520px,92vw);
+  background:#174ea6;
+  border-radius:24px;
+  padding:30px 22px;
+  text-align:center;
+  color:#fff;
+  transition:background .22s
+}
+
+.trainer.ok{background:#16803a}
+.trainer.bad{background:#b42323}
+
+.product{
+  font-size:clamp(27px,7vw,39px);
+  font-weight:750;
+  line-height:1.15;
+  margin:4px 0 28px
+}
+
+.answers{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px
+}
+
+button{
+  border:0;
+  border-radius:15px;
+  min-height:64px;
+  background:#3f7fe0;
+  color:#fff;
+  font-size:22px;
+  font-weight:700;
+  cursor:pointer
+}
+
+button:active{
+  transform:scale(.97)
+}
+
+button:focus-visible{
+  outline:3px solid #fff;
+  outline-offset:3px
+}
+
+.trainer.ok button{
+  background:#36b85a
+}
+
+.trainer.bad button{
+  background:#e85b5b
+}
+
+.result{
+  min-height:29px;
+  margin-top:19px;
+  font-size:20px;
+  font-weight:750
+}
+
+@media(max-width:380px){
+  .trainer{
+    padding:23px 15px
+  }
+
+  button{
+    font-size:19px
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="trainer" id="trainer">
+
+  <div class="product" id="product"></div>
+
+  <div class="answers" id="answers"></div>
+
+  <div class="result" id="result"></div>
+
+</div>
+
+<script>
+
+const raw = `
+
+Ananas, klein|253
+Ananas, Gold|785
+Apfel, Braeburn|4101
+Apfel, Cripps Pink|4128
+Apfel, Elstar|4123
+Apfel, Gala / Tenroy|4135
+Apfel, Jonagold|4147
+Apfel, Granny Smith|4139
+Apfel, Golden Delicious|4020
+Apfel, Scifresh / Jazz|3923
+Apfel rot, BIO|299
+Artischocke|112
+Aubergine, violett|262
+Aubergine, weiß|459
+Aubergine, gestreift|4085
+Aubergine, BIO|6070
+Avocado|117
+Avocado, Feine Welt|438
+Avocado, BIO|155
+
+Banane, Banderole|600
+Banane, Beste Wahl|100
+Banane, Chiquita|601
+Banane, Mini 250g|4449
+Banane, BIO|4238
+Birne, Nashi|209
+Birne, grün|605
+Birne, bunt|606
+Birne Abate Fetel|707
+Birne Eden|1645
+Blumenkohl|137
+Blumenkohl, BIO|188
+Bohne Busch|3054
+Broccoli|493
+
+Champignon, braun|672
+Chinakohl|279
+Chinakohl, violett (Zusatz)|643
+Cherimoya (Spezi)|643
+Eisbergsalat|4061
+Eisbergsalat, BIO|2088
+Erdbeere|620
+Fenchel|4515
+Feige, blau|610
+
+Gurke, Mini|165
+Grapefruit|256
+Grapefruit, BIO|160
+Granatapfel|684
+Granatapfel, BIO (Zusatz)|150
+Gurke, Salat|111
+Gurke, BIO|156
+Gurke, Schmor|686
+Gurke, Land (Zusatz)|321
+Ingwer, BIO|102
+Ingwer, frisch, grün BIO (Zusatz)|2234
+
+Karotte mit Grün|265
+Karotte, BIO|763
+Kartoffel, mk/ffk FRA|694
+Kartoffel, süß rot|678
+Kartoffel, fk.|690
+Kartoffel, süß BIO|490
+Kartoffel, süß violett (Spezi)|2125
+Karambola (Spezi)|612
+Kiwano (Spezi)|613
+Kiwi, Grün|219
+Kiwi grün, BIO|450
+Kiwi, Gold|239
+Kiwi Gold Jumbo, BIO|945
+Kirsche, süß DEU|530
+Knoblauch|318
+Knoblauch, frisch|700
+Kohlrabi|285
+Kohlrabi, BIO|324
+Kokosnuss (Zusatz)|635
+Kopfsalat|286
+Kopfsalat, BIO|3433
+Kurkuma, BIO|366
+
+Kürbis Butternut|534
+Kürbis Butternut, BIO|2303
+Kürbis Halloween|202
+Kürbis Halloween Mini (Zusatz)|1036
+Kürbis Hokkaido|341
+Kürbis Hokkaido, BIO|320
+Kürbis Mikrowelle (Zusatz)|1319
+Kürbis Spaghetti, BIO|142
+Kürbis Sombra, BIO|3576
+Kürbis Mini Muscade|1143
+Kürbis Baby bemalt|1320
+Kürbis Zier|658
+Kürbis Zier Korb|1314
+Kräuterseitlinge (Spezi)|2719
+
+Lauchzwiebeln|261
+Lauchzwiebel, BIO|2307
+Limelon (Zusatz)|3508
+Litschi (Spezi)|638
+Limette, BIO|818
+
+Mango angereift|109
+Mango, RBW essreif|4314
+Mango Ataulfo (Spezi)|1150
+Mango, BIO|1049
+Maracuja (Spezi)|241
+Mandarine|250
+Melone, Galia|3813
+Melone, Wasser rot|633
+Melone, Wasser Mini rot|107
+Melone, Futuro|213
+Nektarine, gelb|626
+Nektarine, weiß|3035
+
+Orange|616
+Papaya, essreif|3111
+Papaya, essreif XXL (Zusatz)|592
+Paprika, gelb|290
+Paprika, grün|234
+Paprika, rot|289
+Paprika, orange|236
+Passionsfrucht|655
+Passionsfrucht XL|655
+Pflaume blau/schwarz|255
+Pfirsich, gelb|4038
+Pfirsich, weiß|4401
+Pfirsich, platt gelb/weiß|161
+Pitahaya, rot|641
+Pitahaya, gelb (Spezi)|527
+Porree|125
+Porree, BIO|956
+
+Quitten (Spezi)|502
+Radieschen|264
+Rettich, weiß Piccolo|1072
+Rettich, weiß Kugel|770
+Rettich, schwarz (Spezi)|744
+Rotkohl|280
+Rote Bete|697
+
+Salat, mit Wurzel, Salattrio|2074
+Salat, Endivie (Zusatz)|284
+Sellerie, Staude|775
+Sellerie, Staude BIO|503
+Sellerie, Knolle|141
+Sellerie, Knolle BIO|371
+Spitzkohl|233
+Spitzkohl, rot/lila (Spezi)|3084
+Steckrübe|698
+Suppengrün|215
+Sharonfrucht|4428
+
+Tomate, Rispe|660
+Tomate, Rispe orange (Zusatz)|539
+Tomate, Rispe gelb (Zusatz)|1899
+Tomate, Fleisch|637
+Tomate, San Marzano|3413
+Traube, hell kernlos|4497
+Traube, blau kernlos|4056
+Traube, rot kernlos|4023
+
+Weißkohl|232
+Wirsing|281
+Zitrone|254
+Zitrone, BIO|144
+Zucchini, grün|260
+Zwiebel|721
+Zwiebel, süß|2555
+Zwetschge|621
+Zwetschge, Korb|545
+
+Erdnüsse Giant|631
+Datteln Medjool|1141
+Marone|645
+
+`;
+
+const data = raw
+  .trim()
+  .split("\n")
+  .filter(line => line.trim() !== "")
+  .map(line => line.split("|"));
+
+let current;
+let last = -1;
+let locked = false;
+
+const trainer = document.getElementById("trainer");
+const product = document.getElementById("product");
+const answers = document.getElementById("answers");
+const result = document.getElementById("result");
+
+
+function shuffle(array){
+
+  array = [...array];
+
+  for(let i = array.length - 1; i > 0; i--){
+
+    const j = Math.floor(Math.random() * (i + 1));
+
+    [array[i], array[j]] =
+    [array[j], array[i]];
+  }
+
+  return array;
+}
+
+
+function next(){
+
+  locked = false;
+
+  trainer.classList.remove("ok","bad");
+
+  result.textContent = "";
+
+  let i;
+
+  do{
+
+    i = Math.floor(Math.random() * data.length);
+
+  }while(data.length > 1 && i === last);
+
+  last = i;
+
+  current = data[i];
+
+  product.textContent = current[0];
+
+  answers.innerHTML = "";
+
+
+  const wrong = shuffle(
+    data.filter((_,x) => x !== i)
+  )
+  .slice(0,3)
+  .map(x => x[1]);
+
+
+  shuffle([
+    current[1],
+    ...wrong
+  ]).forEach(plu => {
+
+    const button =
+      document.createElement("button");
+
+    button.textContent = plu;
+
+    button.onclick =
+      () => answer(plu);
+
+    answers.appendChild(button);
+
+  });
+
+}
+
+
+function answer(plu){
+
+  if(locked) return;
+
+  locked = true;
+
+  const correct =
+    plu === current[1];
+
+
+  trainer.classList.add(
+    correct ? "ok" : "bad"
+  );
+
+
+  result.textContent =
+    correct
+      ? "✓ Korrekt"
+      : "✕ Falsch – " + current[1];
+
+
+  setTimeout(next,900);
+
+}
+
+
+next();
+
+</script>
+
+</body>
+</html>
