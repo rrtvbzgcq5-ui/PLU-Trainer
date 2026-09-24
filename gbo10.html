@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Best of 10 – PLU Trainer</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f8fc;
+            color: #123;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 40px 20px 60px;
+        }
+
+        .back {
+            display: inline-block;
+            margin-bottom: 30px;
+            color: #005bbb;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .back:hover {
+            text-decoration: underline;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 42px;
+            margin: 0 0 10px;
+            color: #005bbb;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #607080;
+            margin-bottom: 35px;
+        }
+
+        .status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+            font-weight: 700;
+        }
+
+        .question-box {
+            background: white;
+            border-radius: 20px;
+            padding: 35px 25px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .product {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 30px;
+        }
+
+        .answers {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .answer {
+            border: none;
+            border-radius: 13px;
+            padding: 18px;
+            background: #005bbb;
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+
+        .answer:hover {
+            transform: translateY(-2px);
+        }
+
+        .answer:disabled {
+            cursor: default;
+        }
+
+        .correct {
+            background: #239b56 !important;
+        }
+
+        .wrong {
+            background: #d9363e !important;
+        }
+
+        .result {
+            margin-top: 25px;
+            font-size: 18px;
+            font-weight: 700;
+            min-height: 27px;
+        }
+
+        .finished {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 40px 25px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .finished h2 {
+            color: #005bbb;
+            font-size: 32px;
+            margin-top: 0;
+        }
+
+        .score {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 20px 0;
+        }
+
+        .restart {
+            border: none;
+            border-radius: 13px;
+            padding: 15px 25px;
+            background: #005bbb;
+            color: white;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+
+            h1 {
+                font-size: 36px;
+            }
+
+            .answers {
+                grid-template-columns: 1fr;
+            }
+
+            .product {
+                font-size: 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <a href="game-mods.html" class="back">
+        ← Zurück zu Game Mods
+    </a>
+
+    <h1>🏆 Best of 10</h1>
+
+    <div class="subtitle">
+        10 zufällige Produkte – wie viele schaffst du?
+    </div>
+
+    <div id="game">
+
+        <div class="status">
+            <span id="questionNumber">Frage 1 / 10</span>
+            <span id="score">Punkte: 0</span>
+        </div>
+
+        <div class="question-box">
+
+            <div class="product" id="productName">
+                Laden...
+            </div>
+
+            <div class="answers" id="answers"></div>
+
+            <div class="result" id="result"></div>
+
+        </div>
+
+    </div>
+
+
+    <div class="finished" id="finished">
+
+        <h2>🏆 Runde beendet!</h2>
+
+        <div class="score" id="finalScore">
+            0 / 10
+        </div>
+
+        <p id="finalMessage"></p>
+
+        <br>
+
+        <button class="restart" id="restart">
+            🔄 Nochmal spielen
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const raw = `
+Ananas, klein|253
+Ananas, Gold|785
+Apfel, Braeburn|4101
+Apfel, Cripps Pink|4128
+Apfel, Elstar|4123
+Apfel, Gala / Tenroy|4135
+Apfel, Jonagold|4147
+Apfel, Granny Smith|4139
+Apfel, Golden Delicious|4020
+Apfel, Scifresh / Jazz|3923
+Apfel rot, BIO|299
+Artischocke|112
+Aubergine, violett|262
+Aubergine, weiß|459
+Aubergine, gestreift|4085
+Aubergine, BIO|6070
+Avocado|117
+Avocado, Feine Welt|438
+Avocado, BIO|155
+Banane, Banderole|600
+Banane, Beste Wahl|100
+Banane, Chiquita|601
+Banane, Mini 250g|4449
+Banane, BIO|4238
+Birne, Nashi|209
+Birne, grün|605
+Birne, bunt|606
+Birne Abate Fetel|707
+Birne Eden|1645
+Blumenkohl|137
+Blumenkohl, BIO|188
+Bohne Busch|3054
+Broccoli|493
+Champignon, braun|672
+Chinakohl|279
+Chinakohl, violett (Zusatz)|643
+Cherimoya (Spezi)|643
+Eisbergsalat|4061
+Eisbergsalat, BIO|2088
+Erdbeere|620
+Fenchel|4515
+Feige, blau|610
+Gurke, Mini|165
+Grapefruit|256
+Grapefruit, BIO|160
+Granatapfel|684
+Granatapfel, BIO (Zusatz)|150
+Gurke, Salat|111
+Gurke, BIO|156
+Gurke, Schmor|686
+Gurke, Land (Zusatz)|321
+Ingwer, BIO|102
+Ingwer, frisch, grün BIO (Zusatz)|2234
+Karotte mit Grün|265
+Karotte, BIO|763
+Kartoffel, mk/ffk FRA|694
+Kartoffel, süß rot|678
+Kartoffel, fk.|690
+Kartoffel, süß BIO|490
+Kartoffel, süß violett (Spezi)|2125
+Karambola (Spezi)|612
+Kiwano (Spezi)|613
+Kiwi, Grün|219
+Kiwi grün, BIO|450
+Kiwi, Gold|239
+Kiwi Gold Jumbo, BIO|945
+Kirsche, süß DEU|530
+Knoblauch|318
+Knoblauch, frisch|700
+Kohlrabi|285
+Kohlrabi, BIO|324
+Kokosnuss (Zusatz)|635
+Kopfsalat|286
+Kopfsalat, BIO|3433
+Kurkuma, BIO|366
+Kürbis Butternut|534
+Kürbis Butternut, BIO|2303
+Kürbis Halloween|202
+Kürbis Halloween Mini (Zusatz)|1036
+Kürbis Hokkaido|341
+Kürbis Hokkaido, BIO|320
+Kürbis Mikrowelle (Zusatz)|1319
+Kürbis Spaghetti, BIO|142
+Kürbis Sombra, BIO|3576
+Kürbis Mini Muscade|1143
+Kürbis Baby bemalt|1320
+Kürbis Zier|658
+Kürbis Zier Korb|1314
+Kräuterseitlinge (Spezi)|2719
+Lauchzwiebeln|261
+Lauchzwiebel, BIO|2307
+Limelon (Zusatz)|3508
+Litschi (Spezi)|638
+Limette, BIO|818
+Mango angereift|109
+Mango, RBW essreif|4314
+Mango Ataulfo (Spezi)|1150
+Mango, BIO|1049
+Maracuja (Spezi)|241
+Mandarine|250
+Melone, Galia|3813
+Melone, Wasser rot|633
+Melone, Wasser Mini rot|107
+Melone, Futuro|213
+Nektarine, gelb|626
+Nektarine, weiß|3035
+Orange|616
+Papaya, essreif|3111
+Papaya, essreif XXL (Zusatz)|592
+Paprika, gelb|290
+Paprika, grün|234
+Paprika, rot|289
+Paprika, orange|236
+Passionsfrucht|655
+Passionsfrucht XL|655
+Pflaume blau/schwarz|255
+Pfirsich, gelb|4038
+Pfirsich, weiß|4401
+Pfirsich, platt gelb/weiß|161
+Pitahaya, rot|641
+Pitahaya, gelb (Spezi)|527
+Porree|125
+Porree, BIO|956
+Quitten (Spezi)|502
+Radieschen|264
+Rettich, weiß Piccolo|1072
+Rettich, weiß Kugel|770
+Rettich, schwarz (Spezi)|744
+Rotkohl|280
+Rote Bete|697
+Salat, mit Wurzel, Salattrio|2074
+Salat, Endivie (Zusatz)|284
+Sellerie, Staude|775
+Sellerie, Staude BIO|503
+Sellerie, Knolle|141
+Sellerie, Knolle BIO|371
+Spitzkohl|233
+Spitzkohl, rot/lila (Spezi)|3084
+Steckrübe|698
+Suppengrün|215
+Sharonfrucht|4428
+Tomate, Rispe|660
+Tomate, Rispe orange (Zusatz)|539
+Tomate, Rispe gelb (Zusatz)|1899
+Tomate, Fleisch|637
+Tomate, San Marzano|3413
+Traube, hell kernlos|4497
+Traube, blau kernlos|4056
+Traube, rot kernlos|4023
+Weißkohl|232
+Wirsing|281
+Zitrone|254
+Zitrone, BIO|144
+Zucchini, grün|260
+Zwiebel|721
+Zwiebel, süß|2555
+Zwetschge|621
+Zwetschge, Korb|545
+Erdnüsse Giant|631
+Datteln Medjool|1141
+Marone|645
+`;
+
+const products = raw
+    .trim()
+    .split("\n")
+    .map(line => {
+        const [name, plu] = line.split("|");
+        return {
+            name: name.trim(),
+            plu: plu.trim()
+        };
+    });
+
+
+let questions = [];
+let currentQuestion = 0;
+let score = 0;
+let locked = false;
+
+
+const productName = document.getElementById("productName");
+const answers = document.getElementById("answers");
+const result = document.getElementById("result");
+const questionNumber = document.getElementById("questionNumber");
+const scoreElement = document.getElementById("score");
+
+const game = document.getElementById("game");
+const finished = document.getElementById("finished");
+const finalScore = document.getElementById("finalScore");
+const finalMessage = document.getElementById("finalMessage");
+const restart = document.getElementById("restart");
+
+
+function shuffle(array) {
+    return [...array].sort(() => Math.random() - 0.5);
+}
+
+
+function startGame() {
+
+    score = 0;
+    currentQuestion = 0;
+    locked = false;
+
+    /*
+        10 verschiedene Produkte zufällig auswählen
+    */
+
+    questions = shuffle(products).slice(0, 10);
+
+    game.style.display = "block";
+    finished.style.display = "none";
+
+    showQuestion();
+}
+
+
+function showQuestion() {
+
+    locked = false;
+
+    const question = questions[currentQuestion];
+
+    questionNumber.textContent =
+        `Frage ${currentQuestion + 1} / 10`;
+
+    scoreElement.textContent =
+        `Punkte: ${score}`;
+
+    productName.textContent = question.name;
+
+    result.textContent = "";
+
+    answers.innerHTML = "";
+
+
+    /*
+        Die richtige PLU + 3 falsche PLUs
+    */
+
+    const wrongAnswers = shuffle(
+        products.filter(product =>
+            product.plu !== question.plu
+        )
+    ).slice(0, 3);
+
+
+    const answerOptions = shuffle([
+        question,
+        ...wrongAnswers
+    ]);
+
+
+    answerOptions.forEach(option => {
+
+        const button = document.createElement("button");
+
+        button.className = "answer";
+        button.textContent = option.plu;
+
+        button.addEventListener("click", () => {
+            checkAnswer(button, option.plu, question.plu);
+        });
+
+        answers.appendChild(button);
+    });
+}
+
+
+function checkAnswer(button, selected, correct) {
+
+    if (locked) return;
+
+    locked = true;
+
+    const buttons = document.querySelectorAll(".answer");
+
+    buttons.forEach(btn => {
+        btn.disabled = true;
+
+        if (btn.textContent === correct) {
+            btn.classList.add("correct");
+        }
+    });
+
+
+    if (selected === correct) {
+
+        score++;
+
+        button.classList.add("correct");
+
+        result.textContent = "✅ Richtig!";
+
+    } else {
+
+        button.classList.add("wrong");
+
+        result.textContent =
+            `❌ Falsch! Richtig wäre ${correct}.`;
+    }
+
+
+    scoreElement.textContent =
+        `Punkte: ${score}`;
+
+
+    setTimeout(() => {
+
+        currentQuestion++;
+
+        if (currentQuestion >= 10) {
+            endGame();
+        } else {
+            showQuestion();
+        }
+
+    }, 900);
+}
+
+
+function endGame() {
+
+    game.style.display = "none";
+    finished.style.display = "block";
+
+    finalScore.textContent =
+        `${score} / 10`;
+
+    if (score === 10) {
+        finalMessage.textContent =
+            "Perfekt! Alle 10 richtig. 🏆";
+    } else if (score >= 8) {
+        finalMessage.textContent =
+            "Sehr stark! 🔥";
+    } else if (score >= 5) {
+        finalMessage.textContent =
+            "Schon ziemlich gut – weiter üben! 💪";
+    } else {
+        finalMessage.textContent =
+            "Da geht noch was! 😄";
+    }
+}
+
+
+restart.addEventListener("click", startGame);
+
+
+startGame();
+
+</script>
+
+</body>
+</html>
